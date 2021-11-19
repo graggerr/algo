@@ -14,24 +14,6 @@ BASE = 'https://api.tdameritrade.com/v1/'
 
 endpoint = r"https://api.tdameritrade.com/v1/marketdata/{}/pricehistory".format('GOOG')
 
-headers = {'apikey' : td_consumer_key}
-
-# define the payload
-payload = {'apikey' : td_consumer_key ,
-           'periodType': 'day',
-           'frequencyType': 'minute',
-           'frequency': '1',
-           'period': '2',
-           'endDate': '1556158524000',
-           'startDate': '1554535854000',
-           'needExtendedHoursData': 'true'}
-
-# make a request
-content = requests.get(url=endpoint, params=payload)
-
-# convert it dictionary object
-data = content.json()
-
 import time
 import urllib
 import requests
@@ -241,73 +223,80 @@ class tdclienthelper:
         return df
 
 
-    def getCallDataJson(self,symbol):
-        content_call = requests.get(url=endpoint,
-                                    params=self.payload_call(symbol))
-        data_call = content_call.json()
-        return data_call;
+    # def getCallDataJson(self,symbol):
+    #     content_call = requests.get(url=endpoint,
+    #                                 params=self.payload_call(symbol))
+    #     data_call = content_call.json()
+    #     return data_call;
+    #
+    # def getPutDataJson(self,symbol):
+    #     content_put = requests.get(url=endpoint, params=self.payload_put(symbol))
+    #     data_put = content_put.json()
+    #     return data_put
 
-    def getPutDataJson(self,symbol):
-        content_put = requests.get(url=endpoint, params=self.payload_put(symbol))
-        data_put = content_put.json()
-        return data_put
+    # def getCallDataJsonDF(self, symbol):
+    #
+    #     data_call = self.getPutDataJson(symbol)
+    #
+    #     return pd.json_normalize(data_call)
+    #
+    #
+    # def getPutDataJsonDF(self, symbol):
+    #     data_put = self.getPutDataJson(symbol)
+    #
+    #
+    #     return pd.json_normalize(data_put)
+    #
+    #
+    #
+    # def getDataforSymvol(self,symvol):
+    #
+    #     data_call = self.getCallDataJson(symvol)
+    #     data_put = self.getPutDataJson(self,symvol)
 
-    def getCallDataJsonDF(self, symbol):
-
-        data_call = self.getPutDataJson(symbol)
-
-        return pd.json_normalize(data_call)
-
-
-    def getPutDataJsonDF(self, symbol):
-        data_put = self.getPutDataJson(symbol)
-
-
-        return pd.json_normalize(data_put)
-
-
-
-    def getDataforSymvol(self,symvol):
-
-        data_call = self.getCallDataJson(symvol)
-        data_put = self.getPutDataJson(self,symvol)
-
-    def calculatecustom4strategy(self,data_call,data_put):
-
-        for stridx, stratery in enumerate(data_call['monthlyStrategyList']):
-            daysToExp = int(stratery['daysToExp'])
-            print(daysToExp)
-            for optidx, option in enumerate(stratery['optionStrategyList']):
-                call_primar = option['primaryLeg']['symbol']
-                call_secondary = option['secondaryLeg']['symbol']
-                primar_strike = float(option['primaryLeg']['strikePrice'])
-                secondary_strike = float(option['secondaryLeg']['strikePrice'])
-                call_strike = option['strategyStrike']
-                call_bid = float(option['strategyBid'])
-                call_ask = float(option['strategyAsk'])
-                put_bid = float(data_put['monthlyStrategyList'][stridx]['optionStrategyList'][optidx]['strategyBid'])
-                put_ask = float(data_put['monthlyStrategyList'][stridx]['optionStrategyList'][optidx]['strategyAsk'])
-                mark = round((call_bid + call_ask) / 2, 2)
-                m = round((put_bid + put_ask) / 2, 2)
-                res = round(m + mark, 2)
-                spread = secondary_strike - primar_strike
-                if (call_bid > 0.0 and call_ask > 0.0 and put_bid > 0.0 and put_ask > 0.0 and res < spread):
-                    profit = round((spread - res) / spread * 100, 1) - daysToExp * 0.027
-                    # print(' {} : {} - {} | {} | {} | {} - {} | {} = {} ? {} +{}%'.format( call_primar,call_strike,call_bid,call_ask,put_bid,put_ask,mark,m,res,spread,profit))
-
+    # def calculatecustom4strategy(self,data_call,data_put):
+    #
+    #     for stridx, stratery in enumerate(data_call['monthlyStrategyList']):
+    #         daysToExp = int(stratery['daysToExp'])
+    #         print(daysToExp)
+    #         for optidx, option in enumerate(stratery['optionStrategyList']):
+    #             call_primar = option['primaryLeg']['symbol']
+    #             call_secondary = option['secondaryLeg']['symbol']
+    #             primar_strike = float(option['primaryLeg']['strikePrice'])
+    #             secondary_strike = float(option['secondaryLeg']['strikePrice'])
+    #             call_strike = option['strategyStrike']
+    #             call_bid = float(option['strategyBid'])
+    #             call_ask = float(option['strategyAsk'])
+    #             put_bid = float(data_put['monthlyStrategyList'][stridx]['optionStrategyList'][optidx]['strategyBid'])
+    #             put_ask = float(data_put['monthlyStrategyList'][stridx]['optionStrategyList'][optidx]['strategyAsk'])
+    #             mark = round((call_bid + call_ask) / 2, 2)
+    #             m = round((put_bid + put_ask) / 2, 2)
+    #             res = round(m + mark, 2)
+    #             spread = secondary_strike - primar_strike
+    #             if (call_bid > 0.0 and call_ask > 0.0 and put_bid > 0.0 and put_ask > 0.0 and res < spread):
+    #                 profit = round((spread - res) / spread * 100, 1) - daysToExp * 0.027
+    #                 # print(' {} : {} - {} | {} | {} | {} - {} | {} = {} ? {} +{}%'.format( call_primar,call_strike,call_bid,call_ask,put_bid,put_ask,mark,m,res,spread,profit))
+    #
 
 
 
 
 
 code=tdclienthelper()
-data = code.options('MSFT',strategy='VERTICAL',
-                    includeQuotes= True,contractType='CALL'
+data = code.optionsDF('AKBA', strategy='SINGLE', #'VERTICAL',
+                    includeQuotes= True,contractType='ALL'
 )
 print(data)
+#
+# df=pd.json_normalize(data)
+data.to_excel("output.xlsx")
 
-df=pd.json_normalize(data)
-print(df)
+
+datajson = code.options('AKBA', strategy='SINGLE', #'VERTICAL',
+                    includeQuotes= True,contractType='ALL'
+)
+print(datajson)
+
 
 #
 # print(code.getCallDataJsonDF("MSFT"))
