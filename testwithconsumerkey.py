@@ -1,81 +1,63 @@
 import json
 import pandas as pd
-
+from sqlalchemy import create_engine, desc, MetaData, Table
 
 import requests
-
 # from splinter import Browser
-
-# define an endpoint with a stock of your choice, MUST BE UPPER
-from tdameritrade.exceptions import TDAAPIError
-
 from config import td_consumer_key
-BASE = 'https://api.tdameritrade.com/v1/'
-
-endpoint = r"https://api.tdameritrade.com/v1/marketdata/{}/pricehistory".format('GOOG')
-
-import time
-import urllib
 import requests
+import traceback
 
-#################
-# OPTION CHAINS #
-#################
-# https://developer.tdameritrade.com/option-chains/apis
-GET_OPTION_CHAIN = BASE + 'marketdata/chains'  # GET
-OPTION_CHAIN_ARGS = ('symbol',
-                     'contractType',
-                     'strikeCount',
-                     'includeQuotes',
-                     'strategy',
-                     'interval',
-                     'strike',
-                     'range',
-                     'fromDate',
-                     'toDate',
-                     'volatility',
-                     'underlyingPrice',
-                     'interestRate',
-                     'daysToExpiration',
-                     'expMonth',
-                     'optionType')
-CONTRACT_TYPE_VALUES = ('CALL', 'PUT', 'ALL')
-STRATEGY_VALUES = ('SINGLE', 'ANALYTICAL', 'COVERED', 'VERTICAL', 'CALENDAR', 'STRANGLE', 'STRADDLE', 'BUTTERFLY', 'CONDOR', 'DIAGONAL', 'COLLAR', 'ROLL')
-RANGE_VALUES = ('ITM', 'NTM', 'OTM', 'SAK', 'SBK', 'SNK', 'ALL')
-OPTION_TYPE_VALUES = ('S', 'NS', 'ALL')
-OPTION_EXPMONTH_VALUES = ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'ALL')
+from exeptions import TDAAPIError
 
 
+class tdbase:
+    BASE = 'https://api.tdameritrade.com/v1/'
+    _params = {'apikey': td_consumer_key}
 
 
-class tdclienthelper:
-    endpoint = BASE+"marketdata/chains"
+class tdclientOptionshelper(tdbase):
+    # endpoint = tdbase.BASE+"marketdata/chains"
+
+    #################
+    # OPTION CHAINS #
+    #################
+    # https://developer.tdameritrade.com/option-chains/apis
+    from exeptions import TDAAPIError
+
+    GET_OPTION_CHAIN = tdbase.BASE + 'marketdata/chains'  # GET
+    OPTION_CHAIN_ARGS = ('symbol',
+                         'contractType',
+                         'strikeCount',
+                         'includeQuotes',
+                         'strategy',
+                         'interval',
+                         'strike',
+                         'range',
+                         'fromDate',
+                         'toDate',
+                         'volatility',
+                         'underlyingPrice',
+                         'interestRate',
+                         'daysToExpiration',
+                         'expMonth',
+                         'optionType')
+
+    CONTRACT_TYPE_VALUES = ('CALL', 'PUT', 'ALL')
+    STRATEGY_VALUES = (
+    'SINGLE', 'ANALYTICAL', 'COVERED', 'VERTICAL', 'CALENDAR', 'STRANGLE', 'STRADDLE', 'BUTTERFLY', 'CONDOR',
+    'DIAGONAL', 'COLLAR', 'ROLL')
+    RANGE_VALUES = ('ITM', 'NTM', 'OTM', 'SAK', 'SBK', 'SNK', 'ALL')
+    OPTION_TYPE_VALUES = ('S', 'NS', 'ALL')
+    OPTION_EXPMONTH_VALUES = ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'ALL')
 
     # def __init__(self):
-
-    def payload_call(self,symbol):
-        return {'apikey' : td_consumer_key,
-                'symbol': symbol,
-                'strategy': 'VERTICAL',
-                'includeQuotes': 'TRUE',
-                'contractType': 'CALL',
-                'strikeCount': '-1'
-                }
-    def payload_put(self,symbol):
-        return {'apikey' : td_consumer_key,
-               'symbol': symbol,
-               'strategy': 'VERTICAL',
-               'includeQuotes': 'TRUE',
-               'contractType': 'PUT',
-               'strikeCount': '-1'
-               }
-
 
     def options(self,
                 symbol,
                 contractType='ALL',
                 strikeCount=-1,
-                includeQuotes=False,
+                includeQuotes=True,
                 strategy='SINGLE',
                 interval=None,
                 strike=None,
@@ -122,10 +104,12 @@ class tdclienthelper:
                                 ALL: All contracts
                                 Default is ALL.
         '''
-        params = {'apikey' : td_consumer_key ,'symbol': symbol}
+        params = self._params
+        params.update({'symbol': symbol})
+        # params = {'apikey' : td_consumer_key ,'symbol': symbol}
 
-        if contractType not in CONTRACT_TYPE_VALUES:
-            raise TDAAPIError('Contract type must be in {}'.format(CONTRACT_TYPE_VALUES))
+        if contractType not in self.CONTRACT_TYPE_VALUES:
+            raise TDAAPIError('Contract type must be in {}'.format(self.CONTRACT_TYPE_VALUES))
         params['contractType'] = contractType
 
         if strikeCount:
@@ -133,8 +117,8 @@ class tdclienthelper:
 
         params['includeQuotes'] = includeQuotes
 
-        if strategy not in STRATEGY_VALUES:
-            raise TDAAPIError('Strategy must be in {}'.format(STRATEGY_VALUES))
+        if strategy not in self.STRATEGY_VALUES:
+            raise TDAAPIError('Strategy must be in {}'.format(self.STRATEGY_VALUES))
 
         params['strategy'] = strategy
 
@@ -144,8 +128,8 @@ class tdclienthelper:
         if strike:
             params['strike'] = strike
 
-        if range not in RANGE_VALUES:
-            raise TDAAPIError('Range must be in {}'.format(RANGE_VALUES))
+        if range not in self.RANGE_VALUES:
+            raise TDAAPIError('Range must be in {}'.format(self.RANGE_VALUES))
             params['range'] = range
 
         if fromDate:
@@ -164,20 +148,20 @@ class tdclienthelper:
             if daysToExpiration:
                 params['daysToExpiration'] = daysToExpiration
 
-        if expMonth not in OPTION_EXPMONTH_VALUES:
-            raise TDAAPIError('Expiration month must be in {}'.format(OPTION_EXPMONTH_VALUES))
+        if expMonth not in self.OPTION_EXPMONTH_VALUES:
+            raise TDAAPIError('Expiration month must be in {}'.format(self.OPTION_EXPMONTH_VALUES))
         params['expMonth'] = expMonth
 
-        if optionType not in OPTION_TYPE_VALUES:
-            raise TDAAPIError('Option type must be in {}'.format(OPTION_TYPE_VALUES))
+        if optionType not in self.OPTION_TYPE_VALUES:
+            raise TDAAPIError('Option type must be in {}'.format(self.OPTION_TYPE_VALUES))
 
-        return requests.get(GET_OPTION_CHAIN, params=params).json()
+        return requests.get(self.GET_OPTION_CHAIN, params=params).json()
 
-    def optionsDF(self,
+    def singleOptionsDF(self,
                   symbol,
                   contractType='ALL',
                   strikeCount=-1,
-                  includeQuotes=False,
+                  includeQuotes=True,
                   strategy='SINGLE',
                   interval=None,
                   strike=None,
@@ -208,6 +192,8 @@ class tdclienthelper:
                            daysToExpiration=daysToExpiration,
                            expMonth=expMonth,
                            optionType=optionType)
+
+
         for date in dat['callExpDateMap']:
             for strike in dat['callExpDateMap'][date]:
                 ret.extend(dat['callExpDateMap'][date][strike])
@@ -216,87 +202,173 @@ class tdclienthelper:
                 ret.extend(dat['putExpDateMap'][date][strike])
 
         df = pd.DataFrame(ret)
+
+
         for col in ('tradeTimeInLong', 'quoteTimeInLong',
                     'expirationDate', 'lastTradingDay'):
+            # try:
             df[col] = pd.to_datetime(df[col], unit='ms')
-
+            # except:
+            #     # print(df,col)
+            #     traceback.print_exc()
+        # else:
+        #     for date in dat['monthlyStrategyList']:
+        #         # for strike in dat['callExpDateMap'][date]:
+        #         #     ret.extend(dat['callExpDateMap'][date][strike])
+        #         ret.extend(dat['callExpDateMap'])
+        df = pd.DataFrame(ret)
         return df
 
 
-    # def getCallDataJson(self,symbol):
-    #     content_call = requests.get(url=endpoint,
-    #                                 params=self.payload_call(symbol))
-    #     data_call = content_call.json()
-    #     return data_call;
-    #
-    # def getPutDataJson(self,symbol):
-    #     content_put = requests.get(url=endpoint, params=self.payload_put(symbol))
-    #     data_put = content_put.json()
-    #     return data_put
+class zerrolossstrategubuilder(tdclientOptionshelper):
 
-    # def getCallDataJsonDF(self, symbol):
-    #
-    #     data_call = self.getPutDataJson(symbol)
-    #
-    #     return pd.json_normalize(data_call)
-    #
-    #
-    # def getPutDataJsonDF(self, symbol):
-    #     data_put = self.getPutDataJson(symbol)
-    #
-    #
-    #     return pd.json_normalize(data_put)
-    #
-    #
-    #
-    # def getDataforSymvol(self,symvol):
-    #
-    #     data_call = self.getCallDataJson(symvol)
-    #     data_put = self.getPutDataJson(self,symvol)
+    # putCall                     -type of option
+    # symbol                      - symvol
+    # description
+    # exchangeName                -exchange name
+    # bid                         -bid
+    # ask                         -ask
+    # last
+    # mark                        - price for strategy calculation
+    # bidSize
+    # askSize
+    # bidAskSize
+    # lastSize
+    # highPrice
+    # lowPrice
+    # openPrice
+    # closePrice
+    # totalVolume                 -volume
+    # tradeDate
+    # tradeTimeInLong
+    # quoteTimeInLong
+    # netChange
+    # volatility
+    # delta                       -delta
+    # gamma
+    # theta
+    # vega
+    # rho
+    # openInterest                -open interest
+    # timeValue
+    # theoreticalOptionValue      -teoretival value now
+    # theoreticalVolatility
+    # optionDeliverablesList
+    # strikePrice                 -strike  price
+    # expirationDate
+    # daysToExpiration
+    # expirationType
+    # lastTradingDay
+    # multiplier
+    # settlementType
+    # deliverableNote
+    # isIndexOption
+    # percentChange
+    # markChange
+    # markPercentChange
+    # intrinsicValue
+    # nonStandard
+    # inTheMoney
+    # mini
+    # pennyPilot
 
-    # def calculatecustom4strategy(self,data_call,data_put):
-    #
-    #     for stridx, stratery in enumerate(data_call['monthlyStrategyList']):
-    #         daysToExp = int(stratery['daysToExp'])
-    #         print(daysToExp)
-    #         for optidx, option in enumerate(stratery['optionStrategyList']):
-    #             call_primar = option['primaryLeg']['symbol']
-    #             call_secondary = option['secondaryLeg']['symbol']
-    #             primar_strike = float(option['primaryLeg']['strikePrice'])
-    #             secondary_strike = float(option['secondaryLeg']['strikePrice'])
-    #             call_strike = option['strategyStrike']
-    #             call_bid = float(option['strategyBid'])
-    #             call_ask = float(option['strategyAsk'])
-    #             put_bid = float(data_put['monthlyStrategyList'][stridx]['optionStrategyList'][optidx]['strategyBid'])
-    #             put_ask = float(data_put['monthlyStrategyList'][stridx]['optionStrategyList'][optidx]['strategyAsk'])
-    #             mark = round((call_bid + call_ask) / 2, 2)
-    #             m = round((put_bid + put_ask) / 2, 2)
-    #             res = round(m + mark, 2)
-    #             spread = secondary_strike - primar_strike
-    #             if (call_bid > 0.0 and call_ask > 0.0 and put_bid > 0.0 and put_ask > 0.0 and res < spread):
-    #                 profit = round((spread - res) / spread * 100, 1) - daysToExp * 0.027
-    #                 # print(' {} : {} - {} | {} | {} | {} - {} | {} = {} ? {} +{}%'.format( call_primar,call_strike,call_bid,call_ask,put_bid,put_ask,mark,m,res,spread,profit))
-    #
+    def singleOptionsDF(self,
+                  symbol,
+                  contractType='ALL',
+                  strikeCount=-1,
+                  includeQuotes=True,
+                  strategy='SINGLE',
+                  interval=None,
+                  strike=None,
+                  range='ALL',
+                  fromDate=None,
+                  toDate=None,
+                  volatility=None,
+                  underlyingPrice=None,
+                  interestRate=None,
+                  daysToExpiration=None,
+                  expMonth='ALL',
+                  optionType='ALL'):
+        '''return options chain as dataframe'''
+        ret = []
+        dat = self.options(symbol=symbol,
+                           contractType=contractType,
+                           strikeCount=strikeCount,
+                           includeQuotes=includeQuotes,
+                           strategy=strategy,
+                           interval=interval,
+                           strike=strike,
+                           range=range,
+                           fromDate=fromDate,
+                           toDate=toDate,
+                           volatility=volatility,
+                           underlyingPrice=underlyingPrice,
+                           interestRate=interestRate,
+                           daysToExpiration=daysToExpiration,
+                           expMonth=expMonth,
+                           optionType=optionType)
+
+
+        for date in dat['callExpDateMap']:
+            for strike in dat['callExpDateMap'][date]:
+                ret.extend(dat['callExpDateMap'][date][strike])
+        for date in dat['putExpDateMap']:
+            for strike in dat['putExpDateMap'][date]:
+                ret.extend(dat['putExpDateMap'][date][strike])
+
+        df = pd.DataFrame(ret)
+
+        return df[['putCall', 'symbol','strikePrice','mark','daysToExpiration','intrinsicValue','theoreticalOptionValue','bid','ask','bidSize','askSize','totalVolume','volatility','delta','gamma','theta','vega','rho','openInterest','timeValue','percentChange','markChange']]
 
 
 
 
+requester=zerrolossstrategubuilder()
 
-code=tdclienthelper()
-data = code.optionsDF('AKBA', strategy='SINGLE', #'VERTICAL',
-                    includeQuotes= True,contractType='ALL'
-)
-print(data)
-#
-# df=pd.json_normalize(data)
-data.to_excel("output.xlsx")
+# recive option DF
+
+_symbol='MSFT'
+# _strategy="SINGLE"
+# _strategy="VERTICAL"
+_strategy="ANALYTICAL"
+_contractType='ALL'
+_includeQuotes=True
+filename="output_{}_{}_{}.xlsx".format(_symbol,_strategy,_contractType)
+# dataDF = requester.optionsDF(symbol=_symbol.upper(), strategy=_strategy.upper(), #'VERTICAL',
+#                     includeQuotes= True,contractType=_contractType)
+# print(dataDF)
+# dataDF.to_excel(filename)
+
+dataDF = requester.singleOptionsDF(symbol=_symbol.upper(),strategy=_strategy.upper(),
+                    includeQuotes= True,contractType=_contractType)
+print(dataDF)
+
+#to excel
+
+dataDF.to_excel(filename)
+
+#to DB
+
+engine = create_engine("sqlite:///:memory:")
+dataDF.to_sql(_symbol, engine,  if_exists="replace", index=False)
+# print(df.describe())
+metadata = MetaData()
+metadata.reflect(engine)
+# for table in metadata.tables.values():
+#     print(table.name)
+#     for column in table.c:
+#         print(column.name)
+
+ask=engine.execute("SELECT * FROM {}".format(_symbol)).fetchone()
 
 
-datajson = code.options('AKBA', strategy='SINGLE', #'VERTICAL',
-                    includeQuotes= True,contractType='ALL'
-)
-print(datajson)
+# print(ask)
 
+#  json
 
-#
-# print(code.getCallDataJsonDF("MSFT"))
+datajson = requester.options(symbol=_symbol.upper(), strategy=_strategy.upper(),
+                    contractType=_contractType)
+
+# print(json.dumps(datajson, indent=4, sort_keys=True))
+# print(datajson)
+
