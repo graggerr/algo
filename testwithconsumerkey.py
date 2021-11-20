@@ -277,7 +277,7 @@ class zerrolossstrategubuilder(tdclientOptionshelper):
                   contractType='ALL',
                   strikeCount=-1,
                   includeQuotes=True,
-                  strategy='SINGLE',
+                  strategy='ANALYTICAL',
                   interval=None,
                   strike=None,
                   range='ALL',
@@ -318,57 +318,159 @@ class zerrolossstrategubuilder(tdclientOptionshelper):
 
         df = pd.DataFrame(ret)
 
-        return df[['putCall', 'symbol','strikePrice','mark','daysToExpiration','intrinsicValue','theoreticalOptionValue','bid','ask','bidSize','askSize','totalVolume','volatility','delta','gamma','theta','vega','rho','openInterest','timeValue','percentChange','markChange']]
+        # return df[['putCall', 'symbol','strikePrice','mark','daysToExpiration','intrinsicValue','theoreticalOptionValue','bid','ask','bidSize','askSize','totalVolume','volatility','delta','gamma','theta','vega','rho','openInterest','timeValue','percentChange','markChange']]
+        return df[
+            ['putCall', 'symbol', 'strikePrice', 'mark', 'daysToExpiration', 'intrinsicValue', 'theoreticalOptionValue',
+             'percentChange', 'markChange','bid','ask']]
+
+    def percentage_change(self,col1, col2):
+        return ((col2 - col1) / col1) * 100
+
+    def strategy_calculate(self,col1,col2):
+        return (-(col1) + (-(col2)) )
+
+    def getstrategyprepareddata(self,symbol):
+        df=self.singleOptionsDF(symbol)
+
+        dfcalls = df.loc[df.putCall == 'CALL'][
+            ['symbol', 'strikePrice', 'mark', 'daysToExpiration','bid','ask']]
+
+        dfcalls = dfcalls.rename(columns={'symbol': 'callsymbol', 'mark': 'callmark','bid':'callbid','ask':'callask'})
+
+        dfputts = df.loc[df.putCall == 'PUT'][
+            ['symbol', 'strikePrice', 'mark', 'daysToExpiration','bid','ask']]
+        dfputts=dfputts.reindex()
+        dfputts = dfputts.rename(columns={'symbol': 'putsymbol', 'mark': 'putmark','bid':'putbid','ask':'putask'})
+
+        dfmerged=pd.merge(dfcalls, dfputts, on=['strikePrice','daysToExpiration'])
+
+        difference = dfmerged[['strikePrice','callmark','putmark']].diff(periods=1).rename(columns={'strikePrice': 'dif1strikePrice',
+                                  'callmark': 'dif1callmark','putmark': 'dif1putmark'})
+
+        # differencestrategy1=difference[['dif1callmark', 'dif1putmark']].diff(axis=1, periods=1)[['dif1putmark']].rename(columns={'dif1putmark': 'strategy1Price'})
+
+        difference2 = dfmerged[['strikePrice', 'callmark', 'putmark']].diff(periods=2).rename(
+            columns={'strikePrice': 'dif2strikePrice',
+                     'callmark': 'dif2callmark', 'putmark': 'dif2putmark'})
+
+        # differencestrategy2 = difference2[['dif2callmark', 'dif2putmark']].diff(axis=1, periods=1)[
+        #     ['dif2putmark']].rename(columns={'dif2putmark': 'strategy2Price'})
+        # print(differencestrategy2)
+
+        difference3 = dfmerged[['strikePrice', 'callmark', 'putmark']].diff(periods=3).rename(
+            columns={'strikePrice': 'dif3strikePrice',
+                     'callmark': 'dif3callmark', 'putmark': 'dif3putmark'})
 
 
 
+        dfmerged=dfmerged.join(difference)
+        # dfmerged = dfmerged.join(differencestrategy1)
+        dfmerged = dfmerged.join( difference2)
+        # dfmerged = dfmerged.join(differencestrategy2)
+        dfmerged = dfmerged.join( difference3)
+        # dfmerged = dfmerged.join(differencestrategy3)
 
-requester=zerrolossstrategubuilder()
+        dfmerged['strategy1Price'] = self.strategy_calculate(dfmerged['dif1callmark'], dfmerged['dif1putmark'])
+        dfmerged['strategy2Price'] = self.strategy_calculate(dfmerged['dif2callmark'], dfmerged['dif2putmark'])
+        dfmerged['strategy3Price'] = self.strategy_calculate(dfmerged['dif3callmark'], dfmerged['dif3putmark'])
 
-# recive option DF
-
-_symbol='MSFT'
-# _strategy="SINGLE"
-# _strategy="VERTICAL"
-_strategy="ANALYTICAL"
-_contractType='ALL'
-_includeQuotes=True
-filename="output_{}_{}_{}.xlsx".format(_symbol,_strategy,_contractType)
-# dataDF = requester.optionsDF(symbol=_symbol.upper(), strategy=_strategy.upper(), #'VERTICAL',
-#                     includeQuotes= True,contractType=_contractType)
-# print(dataDF)
-# dataDF.to_excel(filename)
-
-dataDF = requester.singleOptionsDF(symbol=_symbol.upper(),strategy=_strategy.upper(),
-                    includeQuotes= True,contractType=_contractType)
-print(dataDF)
-
-#to excel
-
-dataDF.to_excel(filename)
-
-#to DB
-
-engine = create_engine("sqlite:///:memory:")
-dataDF.to_sql(_symbol, engine,  if_exists="replace", index=False)
-# print(df.describe())
-metadata = MetaData()
-metadata.reflect(engine)
-# for table in metadata.tables.values():
-#     print(table.name)
-#     for column in table.c:
-#         print(column.name)
-
-ask=engine.execute("SELECT * FROM {}".format(_symbol)).fetchone()
+        dfmerged['str1_pers'] = self.percentage_change(dfmerged['dif1strikePrice'], dfmerged['strategy1Price'])
+        dfmerged['str2_pers'] = self.percentage_change(dfmerged['dif2strikePrice'], dfmerged['strategy2Price'])
+        dfmerged['str3_pers'] = self.percentage_change(dfmerged['dif3strikePrice'], dfmerged['strategy3Price'])
 
 
-# print(ask)
 
-#  json
+        return dfmerged
 
-datajson = requester.options(symbol=_symbol.upper(), strategy=_strategy.upper(),
-                    contractType=_contractType)
 
-# print(json.dumps(datajson, indent=4, sort_keys=True))
-# print(datajson)
 
+    def getstrategydata(self,symbol):
+        df=self.singleOptionsDF(symbol)
+
+        dfcalls = df.loc[df.putCall == 'CALL'][
+            ['symbol', 'strikePrice', 'mark', 'daysToExpiration', 'intrinsicValue', 'theoreticalOptionValue',
+             'percentChange', 'markChange']]
+
+        dfcalls = dfcalls.rename(columns={'symbol': 'callsymbol', 'mark': 'callmark',
+                                          'intrinsicValue': 'callintrinsicValue',
+                                          'theoreticalOptionValue': 'calltheoreticalOptionValue','percentChange':'callpercentChange', 'markChange':'callmarkChange'})
+
+        dfputts = df.loc[df.putCall == 'PUT'][
+            ['symbol', 'strikePrice', 'mark', 'daysToExpiration', 'intrinsicValue', 'theoreticalOptionValue',
+             'percentChange', 'markChange']]
+        dfputts=dfputts.reindex()
+        dfputts = dfputts.rename(columns={'symbol': 'putsymbol', 'mark': 'putmark',
+                                          'intrinsicValue': 'putintrinsicValue',
+                                          'theoreticalOptionValue': 'puttheoreticalOptionValue','percentChange':'putpercentChange', 'markChange':'putmarkChange'})
+
+        return pd.merge(dfcalls, dfputts, on=['strikePrice','daysToExpiration'])
+
+
+
+def testallrun():
+
+
+    requester=zerrolossstrategubuilder()
+
+    # recive option DF
+
+    _symbol='MSFT'
+    # _strategy="SINGLE"
+    # _strategy="VERTICAL"
+    _strategy="ANALYTICAL"
+    _contractType='ALL'
+    _includeQuotes=True
+    filename="output_zerrowloss_{}_{}_{}.xlsx".format(_symbol,_strategy,_contractType)
+    # dataDF = requester.optionsDF(symbol=_symbol.upper(), strategy=_strategy.upper(), #'VERTICAL',
+    #                     includeQuotes= True,contractType=_contractType)
+    # print(dataDF)
+    # dataDF.to_excel(filename)
+
+    dataDF = requester.singleOptionsDF(symbol=_symbol.upper(),strategy=_strategy.upper(),
+                        includeQuotes= True,contractType=_contractType)
+    print(dataDF)
+
+    #to excel
+
+    dataDF.to_excel(filename)
+
+    #to DB
+
+    engine = create_engine("sqlite:///:memory:")
+    dataDF.to_sql(_symbol, engine,  if_exists="replace", index=False)
+    # print(df.describe())
+    metadata = MetaData()
+    metadata.reflect(engine)
+    # for table in metadata.tables.values():
+    #     print(table.name)
+    #     for column in table.c:
+    #         print(column.name)
+
+    ask=engine.execute("SELECT * FROM {}".format(_symbol)).fetchone()
+
+
+    # print(ask)
+
+    #  json
+
+    datajson = requester.options(symbol=_symbol.upper(), strategy=_strategy.upper(),
+                        contractType=_contractType)
+
+    # print(json.dumps(datajson, indent=4, sort_keys=True))
+    # print(datajson)
+
+
+def teststrategy():
+    requester = zerrolossstrategubuilder()
+
+    _symbol = 'MSFT'
+    filename = "output_zerrowloss_{}.xlsx".format(_symbol)
+
+    # dataDF = requester.getstrategydata(symbol=_symbol.upper())
+    dataDF = requester.getstrategyprepareddata(symbol=_symbol.upper())
+    print(dataDF)
+
+    dataDF.to_excel(filename)
+
+if __name__ == '__main__':
+    teststrategy()
