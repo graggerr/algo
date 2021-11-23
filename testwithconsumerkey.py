@@ -323,91 +323,114 @@ class zerrolossstrategubuilder(tdclientOptionshelper):
             ['putCall', 'symbol', 'strikePrice', 'mark', 'daysToExpiration', 'intrinsicValue', 'theoreticalOptionValue',
              'percentChange', 'markChange','bid','ask']]
 
-    def percentage_change(self,col1, col2):
-        return ((col2 - col1) / col1) * 100
 
-    def strategy_calculate(self,col1,col2):
-        return (-(col1) + (-(col2)) )
+    def strategy_calculate(self,row,shift,fee=5):
+        call_sum_price = row['diff_call_mark{}'.format(shift)]
+        put_sum_price= row['real_strategy_put_shifted_down_{}'.format(shift)]
+        dif_strike_price= row['dif_strike_price{}'.format(shift)]
+        day_to_experation= row['daysToExpiration']
 
-    def getstrategyprepareddata(self,symbol):
-        df=self.singleOptionsDF(symbol)
+
+        sum_of_strategy=(-(call_sum_price + put_sum_price))
+        price_of_strategy=sum_of_strategy*100+fee
+        persantage_of_strategy=(dif_strike_price*100-price_of_strategy)/(dif_strike_price*100)
+        # full_profit_in_percentage_of_strategy=(dif_strike_price*100-strategy_price)/(dif_strike_price*100)
+        reasonability_of_strategy=persantage_of_strategy-(day_to_experation/365*10)
+        year_interest_of_strategy=persantage_of_strategy*365/day_to_experation
+
+        return (sum_of_strategy,price_of_strategy,persantage_of_strategy,reasonability_of_strategy,year_interest_of_strategy)
+
+
+
+    def getstrategyrowdataDF(self, symbol):
+        df = self.singleOptionsDF(symbol)
 
         dfcalls = df.loc[df.putCall == 'CALL'][
-            ['symbol', 'strikePrice', 'mark', 'daysToExpiration','bid','ask']]
+            ['symbol', 'strikePrice', 'mark', 'daysToExpiration', 'bid', 'ask']]
 
-        dfcalls = dfcalls.rename(columns={'symbol': 'callsymbol', 'mark': 'callmark','bid':'callbid','ask':'callask'})
+
+        dfcalls = dfcalls.rename(
+            columns={'symbol': 'callsymbol', 'mark': 'callmark', 'bid': 'callbid', 'ask': 'callask'})
 
         dfputts = df.loc[df.putCall == 'PUT'][
-            ['symbol', 'strikePrice', 'mark', 'daysToExpiration','bid','ask']]
-        dfputts=dfputts.reindex()
-        dfputts = dfputts.rename(columns={'symbol': 'putsymbol', 'mark': 'putmark','bid':'putbid','ask':'putask'})
+            ['symbol', 'strikePrice', 'mark', 'daysToExpiration', 'bid', 'ask']]
+        dfputts = dfputts.reindex()
+        dfputts = dfputts.rename(columns={'symbol': 'putsymbol', 'mark': 'putmark', 'bid': 'putbid', 'ask': 'putask'})
 
-        dfmerged=pd.merge(dfcalls, dfputts, on=['strikePrice','daysToExpiration'])
+        dfmerged = pd.merge(dfcalls, dfputts, on=['strikePrice', 'daysToExpiration'])
 
-        difference = dfmerged[['strikePrice','callmark','putmark']].diff(periods=1).rename(columns={'strikePrice': 'dif1strikePrice',
-                                  'callmark': 'dif1callmark','putmark': 'dif1putmark'})
+        return dfmerged
 
-        # differencestrategy1=difference[['dif1callmark', 'dif1putmark']].diff(axis=1, periods=1)[['dif1putmark']].rename(columns={'dif1putmark': 'strategy1Price'})
+    def getstrategycleaneddataDF(self,symbol,shifts=[1]):
 
-        difference2 = dfmerged[['strikePrice', 'callmark', 'putmark']].diff(periods=2).rename(
-            columns={'strikePrice': 'dif2strikePrice',
-                     'callmark': 'dif2callmark', 'putmark': 'dif2putmark'})
+        dfmerged=self.getstrategyrowdataDF(symbol)
 
-        # differencestrategy2 = difference2[['dif2callmark', 'dif2putmark']].diff(axis=1, periods=1)[
-        #     ['dif2putmark']].rename(columns={'dif2putmark': 'strategy2Price'})
-        # print(differencestrategy2)
-
-        difference3 = dfmerged[['strikePrice', 'callmark', 'putmark']].diff(periods=3).rename(
-            columns={'strikePrice': 'dif3strikePrice',
-                     'callmark': 'dif3callmark', 'putmark': 'dif3putmark'})
-
-
-
-        dfmerged=dfmerged.join(difference)
-        # dfmerged = dfmerged.join(differencestrategy1)
-        dfmerged = dfmerged.join( difference2)
-        # dfmerged = dfmerged.join(differencestrategy2)
-        dfmerged = dfmerged.join( difference3)
-        # dfmerged = dfmerged.join(differencestrategy3)
-
-        dfmerged['strategy1Price'] = self.strategy_calculate(dfmerged['dif1callmark'], dfmerged['dif1putmark'])
-        dfmerged['strategy2Price'] = self.strategy_calculate(dfmerged['dif2callmark'], dfmerged['dif2putmark'])
-        dfmerged['strategy3Price'] = self.strategy_calculate(dfmerged['dif3callmark'], dfmerged['dif3putmark'])
-
-        dfmerged['str1_pers'] = self.percentage_change(dfmerged['dif1strikePrice'], dfmerged['strategy1Price'])
-        dfmerged['str2_pers'] = self.percentage_change(dfmerged['dif2strikePrice'], dfmerged['strategy2Price'])
-        dfmerged['str3_pers'] = self.percentage_change(dfmerged['dif3strikePrice'], dfmerged['strategy3Price'])
-
+        # delete 0 values puts and cals
+        dfmerged = dfmerged[(dfmerged['putbid'] != 0) & (dfmerged['putask'] != 0) & (dfmerged['callbid'] != 0) & (
+                    dfmerged['callask'] != 0)]
 
 
         return dfmerged
 
 
 
-    def getstrategydata(self,symbol):
-        df=self.singleOptionsDF(symbol)
+    def getstrategypreparedbasedataDF(self,symbol,shifts=[1],fee=5):
 
-        dfcalls = df.loc[df.putCall == 'CALL'][
-            ['symbol', 'strikePrice', 'mark', 'daysToExpiration', 'intrinsicValue', 'theoreticalOptionValue',
-             'percentChange', 'markChange']]
-
-        dfcalls = dfcalls.rename(columns={'symbol': 'callsymbol', 'mark': 'callmark',
-                                          'intrinsicValue': 'callintrinsicValue',
-                                          'theoreticalOptionValue': 'calltheoreticalOptionValue','percentChange':'callpercentChange', 'markChange':'callmarkChange'})
-
-        dfputts = df.loc[df.putCall == 'PUT'][
-            ['symbol', 'strikePrice', 'mark', 'daysToExpiration', 'intrinsicValue', 'theoreticalOptionValue',
-             'percentChange', 'markChange']]
-        dfputts=dfputts.reindex()
-        dfputts = dfputts.rename(columns={'symbol': 'putsymbol', 'mark': 'putmark',
-                                          'intrinsicValue': 'putintrinsicValue',
-                                          'theoreticalOptionValue': 'puttheoreticalOptionValue','percentChange':'putpercentChange', 'markChange':'putmarkChange'})
-
-        return pd.merge(dfcalls, dfputts, on=['strikePrice','daysToExpiration'])
+        dfmerged=self.getstrategycleaneddataDF(symbol)
 
 
+        for shift in shifts:
+            # calculate puts and strike  price shift 1 up in calculation
+            dfmerged[['dif_strike_price{}'.format(shift), 'diff_call_mark{}'.format(shift)]] = \
+            dfmerged.groupby('daysToExpiration')[
+                ['strikePrice', 'callmark']].diff(periods=shift)
 
-def testallrun():
+            # calculate calls price shift 1 down in calculation
+            dfmerged[['diff_put_mark{}'.format(shift)]] = dfmerged.groupby('daysToExpiration')[['putmark']].diff(periods=(-(shift)))
+
+
+            # for easy calculation shift puts down 1
+            dfmerged['real_strategy_put_shifted_down_{}'.format(shift)] = dfmerged['diff_put_mark{}'.format(shift)].shift(
+                (shift))
+
+
+            dfmerged['sum_of_strategy{}'.format(shift)],\
+            dfmerged['price_of_strategy{}'.format(shift)],\
+            dfmerged[ 'persantage_of_strategy{}'.format(shift)],\
+            dfmerged['reasonability_of_strategy{}'.format(shift)], \
+            dfmerged['year_interest_of_strategy{}'.format(shift)] \
+                        =zip(*dfmerged.apply(self.strategy_calculate, args=(shift,fee) ,axis=1))
+
+
+
+
+        return dfmerged
+
+
+    # def getstrategydata(self,symbol):
+    #     df=self.singleOptionsDF(symbol)
+    #
+    #     dfcalls = df.loc[df.putCall == 'CALL'][
+    #         ['symbol', 'strikePrice', 'mark', 'daysToExpiration', 'intrinsicValue', 'theoreticalOptionValue',
+    #          'percentChange', 'markChange']]
+    #
+    #     dfcalls = dfcalls.rename(columns={'symbol': 'callsymbol', 'mark': 'callmark',
+    #                                       'intrinsicValue': 'callintrinsicValue',
+    #                                       'theoreticalOptionValue': 'calltheoreticalOptionValue','percentChange':'callpercentChange', 'markChange':'callmarkChange'})
+    #
+    #     dfputts = df.loc[df.putCall == 'PUT'][
+    #         ['symbol', 'strikePrice', 'mark', 'daysToExpiration', 'intrinsicValue', 'theoreticalOptionValue',
+    #          'percentChange', 'markChange']]
+    #     dfputts=dfputts.reindex()
+    #     dfputts = dfputts.rename(columns={'symbol': 'putsymbol', 'mark': 'putmark',
+    #                                       'intrinsicValue': 'putintrinsicValue',
+    #                                       'theoreticalOptionValue': 'puttheoreticalOptionValue','percentChange':'putpercentChange', 'markChange':'putmarkChange'})
+    #
+    #     return pd.merge(dfcalls, dfputts, on=['strikePrice','daysToExpiration'])
+
+
+
+def testjsonrun():
 
 
     requester=zerrolossstrategubuilder()
@@ -463,11 +486,11 @@ def testallrun():
 def teststrategy():
     requester = zerrolossstrategubuilder()
 
-    _symbol = 'MSFT'
+    _symbol = 'SAVA'
     filename = "output_zerrowloss_{}.xlsx".format(_symbol)
 
     # dataDF = requester.getstrategydata(symbol=_symbol.upper())
-    dataDF = requester.getstrategyprepareddata(symbol=_symbol.upper())
+    dataDF = requester.getstrategypreparedbasedataDF(symbol=_symbol.upper())
     print(dataDF)
 
     dataDF.to_excel(filename)
