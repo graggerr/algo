@@ -331,14 +331,14 @@ class zerrolossstrategubuilder(tdclientOptionshelper):
         day_to_experation= row['daysToExpiration']
 
 
-        sum_of_strategy=(-(call_sum_price + put_sum_price))
-        price_of_strategy=sum_of_strategy*100+fee
-        persantage_of_strategy=(dif_strike_price*100-price_of_strategy)/(dif_strike_price*100)
-        # full_profit_in_percentage_of_strategy=(dif_strike_price*100-strategy_price)/(dif_strike_price*100)
-        reasonability_of_strategy=persantage_of_strategy-(day_to_experation/365*10)
+        sum_of_strategy=call_sum_price + put_sum_price
+        cost_of_margine = (1 * day_to_experation / 365 )*12/100
+        total_profit_loss = dif_strike_price+sum_of_strategy-fee/100-cost_of_margine
+        persantage_of_strategy = -total_profit_loss/sum_of_strategy
         year_interest_of_strategy=persantage_of_strategy*365/day_to_experation
 
-        return (sum_of_strategy,price_of_strategy,persantage_of_strategy,reasonability_of_strategy,year_interest_of_strategy)
+
+        return (sum_of_strategy,cost_of_margine,total_profit_loss,persantage_of_strategy,year_interest_of_strategy)
 
 
 
@@ -393,11 +393,10 @@ class zerrolossstrategubuilder(tdclientOptionshelper):
             dfmerged['real_strategy_put_shifted_down_{}'.format(shift)] = dfmerged['diff_put_mark{}'.format(shift)].shift(
                 (shift))
 
-
             dfmerged['sum_of_strategy{}'.format(shift)],\
-            dfmerged['price_of_strategy{}'.format(shift)],\
-            dfmerged[ 'persantage_of_strategy{}'.format(shift)],\
-            dfmerged['reasonability_of_strategy{}'.format(shift)], \
+            dfmerged['cost_of_margine_of_strategy{}'.format(shift)],\
+            dfmerged[ 'total_profit_loss_of_strategy{}'.format(shift)],\
+            dfmerged['persantage_of_strategy{}'.format(shift)], \
             dfmerged['year_interest_of_strategy{}'.format(shift)] \
                         =zip(*dfmerged.apply(self.strategy_calculate, args=(shift,fee) ,axis=1))
 
