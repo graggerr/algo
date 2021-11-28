@@ -6,7 +6,7 @@ from config import td_consumer_key
 import requests
 
 
-from exeptions import TDAAPIError
+from tda.exeptions import TDAAPIError
 
 
 class tdbase:
@@ -28,7 +28,7 @@ class tdclientOptionshelper(tdbase):
     # OPTION CHAINS #
     #################
     # https://developer.tdameritrade.com/option-chains/apis
-    from exeptions import TDAAPIError
+    from tda.exeptions import TDAAPIError
 
     GET_OPTION_CHAIN = tdbase.BASE + 'marketdata/chains'  # GET
     OPTION_CHAIN_ARGS = ('symbol',

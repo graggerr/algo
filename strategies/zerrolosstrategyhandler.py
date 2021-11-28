@@ -1,8 +1,3 @@
-from pandas import DataFrame
-
-from zerrolossstrategyestimator import zerroloss_strategy_TD_estimator
-
-
 class strategyhandlerbase():
     pass
 
@@ -14,7 +9,7 @@ class zerroloss_strategy_handler(strategyhandlerbase):
     # def handle(self,strategyDF)-> DataFrame :
     #     pass
 
-    def handlestrategyDF(self,dfhandled):
+    def handlestrategyDF(self,strategy_data_df):
         # zerrolossstrategyestimator = zerrolossstrategyestimator()
 
         # _symbol = 'SAVA'
@@ -23,12 +18,12 @@ class zerroloss_strategy_handler(strategyhandlerbase):
         # dataDF = requester.getstrategydata(symbol=_symbol.upper())
         # dfhandled =self.handle(dfhandled )
 
-        dfhandled=dfhandled[(dfhandled['year_interest_of_strategy1'] > 100) &
-                            (dfhandled['year_interest_of_strategy1'] < 50000) ]
+        strategy_data_df=strategy_data_df[(strategy_data_df['year_interest_of_strategy1'] > 100) &
+                            (strategy_data_df['year_interest_of_strategy1'] < 50000) ]
 
 
 
-        dfhandled = dfhandled.sort_values(by=['year_interest_of_strategy1']).head(10)
+        strategy_data_df = strategy_data_df.sort_values(by=['year_interest_of_strategy1']).head(10)
 
 
-        return dfhandled
+        return strategy_data_df

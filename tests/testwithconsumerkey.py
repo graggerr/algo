@@ -51,8 +51,8 @@
 #     # print(json.dumps(datajson, indent=4, sort_keys=True))
 #     # print(datajson)
 #
-from zerrolossstrategyestimator import zerroloss_strategy_TD_estimator
-from zerrolosstrategyhandler import zerroloss_strategy_handler
+from strategies.zerrolossstrategyestimator import zerroloss_strategy_TD_estimator
+from strategies.zerrolosstrategyhandler import zerroloss_strategy_handler
 
 
 def teststrategy():
