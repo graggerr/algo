@@ -61,12 +61,15 @@ from sqlalchemy.orm import mapper
 from config import client_id, refresh_token, account_id
 
 tdclient = td.TDClient(client_id=client_id, refresh_token=refresh_token, account_ids=[account_id])
-print(tdclient.movers("$SPX.X"))
-print(tdclient.watchlists())
+# print(tdclient.movers("$SPX.X"))
+# print(tdclient.watchlists())
 
 engine = create_engine("sqlite:///:memory:")
-df=tdclient.optionsDF('AKBA')
-print(df.iloc[132])
+df=tdclient.optionsDF('AKBA',strategy='ANALYTICAL')
+# print(df.iloc[132])
+print(df)
+df.to_excel("output.xlsx")
+
 df.to_sql('AKBA', engine,  if_exists="replace", index=False)
 # print(df.describe())
 metadata = MetaData()
