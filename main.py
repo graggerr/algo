@@ -7,18 +7,16 @@
 
 # Press the green button in the gutter to run the script.
 import api
+from configuration import Configuration
 
 strategyApi= api.StrategyRunnerAPI()
+configuration = Configuration().load_configuration()
 
 from Util import outputUtil
 
 if __name__ == '__main__':
   symbol='SAVA'
-  estimator = strategyApi.run_zerroloss_strategy(symbol)
+  strategy_data =strategyApi.run_zerroloss_strategy(configuration,symbol)
+  outputUtil.dataToExl(symbol,strategy_data)
 
-  # onlu=y for feodor :)
-  # options_data=tdclientOptionshelper().options(symbol=_symbol)
-  # strategy_data =estimator.getstrategypreparedbasedataDF(options_data)
-  strategy_data = estimator.getstrategydataDF()
-  outputUtil.dataToExl(symbol, strategy_data)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

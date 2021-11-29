@@ -80,39 +80,42 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
         tdmarket_data=self.td_singleOptionsDF(tdmarket_data_json)
 
         tdmarket_data=self.getstrategyrowdataDF(tdmarket_data)
-        dfmerged=self.getstrategycleaneddataDF(tdmarket_data)
+        tdmarket_data=self.getstrategycleaneddataDF(tdmarket_data)
+
+        # print(tdmarket_data)
 
 
         for shift in self.shifts:
             # calculate puts and strike  price shift 1 up in calculation
-            dfmerged[['dif_strike_price{}'.format(shift), 'diff_call_mark{}'.format(shift)]] = \
-            dfmerged.groupby('daysToExpiration')[
+            tdmarket_data[['dif_strike_price{}'.format(shift), 'diff_call_mark{}'.format(shift)]] = \
+            tdmarket_data.groupby('daysToExpiration')[
                 ['strikePrice', 'callmark']].diff(periods=shift)
 
             # calculate calls price shift 1 down in calculation
-            dfmerged[['diff_put_mark{}'.format(shift)]] = dfmerged.groupby('daysToExpiration')[['putmark']].diff(periods=(-(shift)))
+            tdmarket_data[['diff_put_mark{}'.format(shift)]] = tdmarket_data.groupby('daysToExpiration')[['putmark']].diff(periods=(-(shift)))
 
 
             # for easy calculation shift puts down 1
-            dfmerged['real_strategy_put_shifted_down_{}'.format(shift)] = dfmerged['diff_put_mark{}'.format(shift)].shift(
+            tdmarket_data['real_strategy_put_shifted_down_{}'.format(shift)] = tdmarket_data['diff_put_mark{}'.format(shift)].shift(
                 (shift))
 
-            dfmerged['sum_of_strategy{}'.format(shift)],\
-            dfmerged['cost_of_margine_of_strategy{}'.format(shift)],\
-            dfmerged[ 'total_profit_loss_of_strategy{}'.format(shift)],\
-            dfmerged['persantage_of_strategy{}'.format(shift)], \
-            dfmerged['year_interest_of_strategy{}'.format(shift)] \
-                        =zip(*dfmerged.apply(self.strategy_calculate,args=(shift,) ,axis=1))
+            tdmarket_data['sum_of_strategy{}'.format(shift)],\
+            tdmarket_data['cost_of_margine_of_strategy{}'.format(shift)],\
+            tdmarket_data[ 'total_profit_loss_of_strategy{}'.format(shift)],\
+            tdmarket_data['persantage_of_strategy{}'.format(shift)], \
+            tdmarket_data['year_interest_of_strategy{}'.format(shift)] \
+                        =zip(*tdmarket_data.apply(self.strategy_calculate,args=(shift,) ,axis=1))
 
 
 
 
-        return dfmerged
+        return tdmarket_data
 
     def getstrategydataDF(self):
 
         tdmarket_data_json = self.options(symbol=self.symbol,
-                                    strategy="ANALYTICAL",
+                                    # strategy="ANALYTICAL",
+                                    strategy="SINGLE",
                                     contractType='ALL',
                                     includeQuotes=True)
 

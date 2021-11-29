@@ -18,7 +18,7 @@ class zerroloss_strategy_handler(strategyhandlerbase):
         # dataDF = requester.getstrategydata(symbol=_symbol.upper())
         # dfhandled =self.handle(dfhandled )
 
-        strategy_data_df=strategy_data_df[(strategy_data_df['year_interest_of_strategy1'] > 100) &
+        strategy_data_df=strategy_data_df[(strategy_data_df['year_interest_of_strategy1'] > 60) &
                             (strategy_data_df['year_interest_of_strategy1'] < 50000) ]
 
 

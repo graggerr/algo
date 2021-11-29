@@ -1,23 +1,18 @@
 import api
-from Util import outputUtil
+from configuration import Configuration
 
-proccessorApi= api.StrategyRunnerAPI()
+strategyApi= api.StrategyRunnerAPI()
+configuration = Configuration().load_configuration()
 
 def proccess(symbol ):
 
     print('Start')
-    estimator =proccessorApi.run_zerroloss_strategy(symbol)
+    strategy_data =strategyApi.run_zerroloss_strategy(configuration,symbol)
 
-
-    # onlu=y for feodor :)
-    # options_data=tdclientOptionshelper().options(symbol=_symbol)
-    # strategy_data =estimator.getstrategypreparedbasedataDF(options_data)
-    strategy_data = estimator.getstrategydataDF()
-    outputUtil.dataToExl(symbol, strategy_data)
     print('Stop')
 
 
 if __name__ == '__main__':
-    proccess()
+    proccess('SAVA')
 
 

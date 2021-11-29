@@ -1,7 +1,8 @@
 import os
 import yaml
 
-from strategies.utils import is_file, create_directory
+# from strategies.utils import is_file, create_directory
+from Util import is_file, create_directory
 
 
 class Configuration:
@@ -17,12 +18,21 @@ class Configuration:
     initial_test_config = dict(
         keystore_location=config_dir,
         # keystore_filename='/keystore'
+        td_consumer_key='',
+
+        client_id = '',
+        account_id = '',
+        refresh_token = '',
     )
 
     initial_dev_config = dict(
         keystore_location=config_dir,
         # keystore_filename='/keystore',
+        td_consumer_key='',
 
+        client_id='',
+        account_id='',
+        refresh_token='',
     )
 
     initial_config=initial_test_config #initial_dev_config
