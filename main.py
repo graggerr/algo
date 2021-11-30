@@ -18,5 +18,5 @@ if __name__ == '__main__':
   symbol='SAVA'
   strategy_data =strategyApi.run_zerroloss_strategy(configuration,symbol)
   outputUtil.dataToExl(symbol,strategy_data)
-
+#test
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
