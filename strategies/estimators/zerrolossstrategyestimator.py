@@ -3,14 +3,14 @@ import pandas as pd
 from tda.tddataprovider import tdclientOptionshelper
 
 
-class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
+class StrategyEstimatorZerroloss_TD(tdclientOptionshelper):
     def __init__(self,symbol,shifts=[1],tdconsumer_key=None):
         self.symbol=symbol
         self.shifts=shifts
         super(tdclientOptionshelper, self).__init__(tdconsumer_key)
         # self.fee=tdclientOptionshelper.getFee()
 
-    def td_singleOptionsDF(self,tdmarket_data):
+    def getOptionsData(self,tdmarket_data):
         '''return options chain as dataframe'''
         ret = []
 
@@ -29,12 +29,12 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
              'percentChange', 'markChange','bid','ask']]
 
 
-    def strategy_calculate(self,row,shift):
+    def getStrategyCalculate(self,row,shift):
         call_sum_price = row['diff_call_mark{}'.format(shift)]
         put_sum_price= row['real_strategy_put_shifted_down_{}'.format(shift)]
         dif_strike_price= row['dif_strike_price{}'.format(shift)]
         day_to_experation= row['daysToExpiration']
-
+        
 
         sum_of_strategy=call_sum_price + put_sum_price
         cost_of_margine = (1 * day_to_experation / 365 )*12/100
@@ -47,7 +47,7 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
 
 
 
-    def getstrategyrowdataDF(self,tdmarket_data):
+    def getStrategyFlatData(self,tdmarket_data):
 
 
         dfcalls = tdmarket_data.loc[tdmarket_data.putCall == 'CALL'][
@@ -66,7 +66,7 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
 
         return dfmerged
 
-    def getstrategycleaneddataDF(self,tdmarket_data):
+    def getStrategyCleaneDdata(self,tdmarket_data):
 
         # delete 0 values puts and cals
         dfmerged = tdmarket_data[(tdmarket_data['putbid'] != 0) & (tdmarket_data['putask'] != 0) & (tdmarket_data['callbid'] != 0) & (
@@ -75,14 +75,13 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
 
         return dfmerged
 
-    def getstrategypreparedbasedataDF(self,tdmarket_data_json):
+    def getStrategyPreparedBasedata(self,tdmarket_data_json):
 
-        tdmarket_data=self.td_singleOptionsDF(tdmarket_data_json)
+        tdmarket_data=self.getOptionsData(tdmarket_data_json)
+        tdmarket_data=self.getStrategyFlatData(tdmarket_data)
+        tdmarket_data=self.getStrategyCleaneDdata(tdmarket_data)
 
-        tdmarket_data=self.getstrategyrowdataDF(tdmarket_data)
-        tdmarket_data=self.getstrategycleaneddataDF(tdmarket_data)
-
-        # print(tdmarket_data)
+        #print(tdmarket_data)
 
 
         for shift in self.shifts:
@@ -104,14 +103,14 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
             tdmarket_data[ 'total_profit_loss_of_strategy{}'.format(shift)],\
             tdmarket_data['persantage_of_strategy{}'.format(shift)], \
             tdmarket_data['year_interest_of_strategy{}'.format(shift)] \
-                        =zip(*tdmarket_data.apply(self.strategy_calculate,args=(shift,) ,axis=1))
+                        =zip(*tdmarket_data.apply(self.getStrategyCalculate,args=(shift,) ,axis=1))
 
 
 
 
         return tdmarket_data
 
-    def getstrategydataDF(self):
+    def getStrategyData(self):
 
         tdmarket_data_json = self.options(symbol=self.symbol,
                                     # strategy="ANALYTICAL",
@@ -119,7 +118,7 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
                                     contractType='ALL',
                                     includeQuotes=True)
 
-        dfmerged=self.getstrategypreparedbasedataDF(tdmarket_data_json)
+        dfmerged=self.getStrategyPreparedBasedata(tdmarket_data_json)
 
         return dfmerged
 

@@ -51,25 +51,25 @@
 #     # print(json.dumps(datajson, indent=4, sort_keys=True))
 #     # print(datajson)
 #
-from strategies.estimators.zerrolossstrategyestimator import zerroloss_strategy_TD_estimator
-from strategies.handlers.zerrolosstrategyhandler import zerroloss_strategy_handler
+from strategies.estimators.zerrolossstrategyestimator import StrategyEstimatorZerroloss_TD
+from strategies.handlers.zerrolosstrategyhandler import StrategyHandlerZerroloss
 
 
 def teststrategy():
     _symbol = 'SAVA'
-    requester = zerroloss_strategy_TD_estimator(_symbol)
+    requester = StrategyEstimatorZerroloss_TD(_symbol)
 
 
     filename = "output_zerrowloss_{}.xlsx".format(_symbol)
 
     # dataDF = requester.getstrategydata(symbol=_symbol.upper())
-    dataDF = requester.getstrategydataDF()
+    dataDF = requester.getStrategyData()
     print(dataDF)
 
     dataDF.to_excel(filename)
 
     # return best operations
-    print(zerroloss_strategy_handler().handlestrategyDF(requester))
+    print(StrategyHandlerZerroloss().handleStrategy(requester))
 
 if __name__ == '__main__':
     teststrategy()
