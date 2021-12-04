@@ -38,8 +38,14 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
 
         sum_of_strategy=call_sum_price + put_sum_price
         cost_of_margine = (1 * day_to_experation / 365 )*12/100
-        total_profit_loss = dif_strike_price+sum_of_strategy-super().getFee()/100-cost_of_margine
-        persantage_of_strategy = -total_profit_loss/sum_of_strategy
+
+        if sum_of_strategy == 0 :
+            total_profit_loss =0
+            persantage_of_strategy = 0
+        else:
+            total_profit_loss = dif_strike_price + sum_of_strategy - super().getFee() / 100 - cost_of_margine
+            persantage_of_strategy = -total_profit_loss/sum_of_strategy
+
         year_interest_of_strategy=persantage_of_strategy*365/day_to_experation
 
 
@@ -76,10 +82,11 @@ class zerroloss_strategy_TD_estimator(tdclientOptionshelper):
         return dfmerged
 
     def getstrategypreparedbasedataDF(self,tdmarket_data_json):
-
+        # make dataframe from json
         tdmarket_data=self.td_singleOptionsDF(tdmarket_data_json)
-
+        #merge calls and puts to strategu
         tdmarket_data=self.getstrategyrowdataDF(tdmarket_data)
+
         tdmarket_data=self.getstrategycleaneddataDF(tdmarket_data)
 
         # print(tdmarket_data)
