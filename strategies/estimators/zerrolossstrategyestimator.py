@@ -10,7 +10,7 @@ class StrategyEstimatorZerroloss_TD(tdclientOptionshelper):
         super(tdclientOptionshelper, self).__init__(tdconsumer_key)
         # self.fee=tdclientOptionshelper.getFee()
 
-    def getOptionsData(self,tdmarket_data):
+    def getTDSingleOptionsDF(self,tdmarket_data):
         '''return options chain as dataframe'''
         ret = []
 
@@ -34,12 +34,18 @@ class StrategyEstimatorZerroloss_TD(tdclientOptionshelper):
         put_sum_price= row['real_strategy_put_shifted_down_{}'.format(shift)]
         dif_strike_price= row['dif_strike_price{}'.format(shift)]
         day_to_experation= row['daysToExpiration']
-        
+
 
         sum_of_strategy=call_sum_price + put_sum_price
         cost_of_margine = (1 * day_to_experation / 365 )*12/100
-        total_profit_loss = dif_strike_price+sum_of_strategy-super().getFee()/100-cost_of_margine
-        persantage_of_strategy = -total_profit_loss/sum_of_strategy
+
+        if sum_of_strategy == 0 :
+            total_profit_loss =0
+            persantage_of_strategy = 0
+        else:
+            total_profit_loss = dif_strike_price + sum_of_strategy - super().getFee() / 100 - cost_of_margine
+            persantage_of_strategy = -total_profit_loss/sum_of_strategy
+
         year_interest_of_strategy=persantage_of_strategy*365/day_to_experation
 
 
@@ -76,12 +82,13 @@ class StrategyEstimatorZerroloss_TD(tdclientOptionshelper):
         return dfmerged
 
     def getStrategyPreparedBasedata(self,tdmarket_data_json):
-
-        tdmarket_data=self.getOptionsData(tdmarket_data_json)
+        # make dataframe from json
+        tdmarket_data=self.getTDSingleOptionsDF(tdmarket_data_json)
+        # merge calls and puts to strategu
         tdmarket_data=self.getStrategyFlatData(tdmarket_data)
         tdmarket_data=self.getStrategyCleaneDdata(tdmarket_data)
 
-        #print(tdmarket_data)
+        # print(tdmarket_data)
 
 
         for shift in self.shifts:
