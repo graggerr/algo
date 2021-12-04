@@ -1,7 +1,7 @@
 class strategyhandlerbase():
     pass
 
-class zerroloss_strategy_handler(strategyhandlerbase):
+class StrategyHandlerZerroloss(strategyhandlerbase):
     def __init__(self):
         pass
 
@@ -9,7 +9,7 @@ class zerroloss_strategy_handler(strategyhandlerbase):
     # def handle(self,strategyDF)-> DataFrame :
     #     pass
 
-    def handlestrategyDF(self,strategy_data_df):
+    def handleStrategy(self,strategy_data_df):
         # zerrolossstrategyestimator = zerrolossstrategyestimator()
 
         # _symbol = 'SAVA'

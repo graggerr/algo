@@ -6,10 +6,10 @@
 
 
 # Press the green button in the gutter to run the script.
-import api
+from  MarketScanner import MarketScanner
 from configuration import Configuration
-from strategies.estimators.zerrolossstrategyestimator import zerroloss_strategy_TD_estimator
-from strategies.handlers.zerrolosstrategyhandler import zerroloss_strategy_handler
+from strategies.estimators.zerrolossstrategyestimator import StrategyEstimatorZerroloss_TD
+from strategies.handlers.zerrolosstrategyhandler import StrategyHandlerZerroloss
 
 #strategyApi= api.StrategyRunnerAPI()
 #configuration = Configuration().load_configuration()
@@ -17,14 +17,15 @@ from strategies.handlers.zerrolosstrategyhandler import zerroloss_strategy_handl
 from Util import outputUtil
 
 if __name__ == '__main__':
-  symbol='SAVA'
-  estimator = zerroloss_strategy_TD_estimator(symbol)
-  handler =zerroloss_strategy_handler()
+ 
+  scanner = MarketScanner()
+  symbol=scanner.getSymbols()
+  estimator = StrategyEstimatorZerroloss_TD(symbol[0])
+  handler =StrategyHandlerZerroloss()
 
-  strategy_data = estimator.getstrategydataDF()
-  operation_data = handler.handlestrategyDF(strategy_data)
+  strategy_data = estimator.getStrategyData()
+  operation_data = handler.handleStrategy(strategy_data)
 
-  #strategy_data =strategyApi.run_zerroloss_strategy(configuration,symbol)
   outputUtil.dataToExl(symbol,strategy_data)
   print(operation_data)
 #test
