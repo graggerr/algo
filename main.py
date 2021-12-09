@@ -26,7 +26,12 @@ if __name__ == '__main__':
   strategy_data = estimator.getStrategyData()
   operation_data = handler.handleStrategy(strategy_data)
 
-  outputUtil.dataToExl(symbol,strategy_data)
+
+  print(strategy_data)
+
+
+  outputUtil.dataToExl(symbol[0],'zerroloss', strategy_data)
   print(operation_data)
+  outputUtil.dataToExl(symbol[0],'zerroloss_handler', operation_data)
 #test
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
