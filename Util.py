@@ -39,6 +39,6 @@ def create_directory(dirname):
 
 
 class outputUtil:
-    def dataToExl(symbol_name,data):
-            filename = "output_zerrowloss_{}.xlsx".format(symbol_name)
+    def dataToExl(symbol_name,strategy,data):
+            filename = "output_{}_{}.xlsx".format(strategy,symbol_name)
             data.to_excel(filename)
