@@ -1,3 +1,4 @@
 tdameritrade
 sqlalchemy
 marshmallow
+pyyaml
