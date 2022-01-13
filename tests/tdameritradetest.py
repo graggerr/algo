@@ -1,8 +1,11 @@
+import json
 import os
 
 # client_id = os.getenv('TDAMERITRADE_CLIENT_ID')
 # account_id = os.getenv('TDAMERITRADE_ACCOUNT_ID')
 # refresh_token = os.getenv('TDAMERITRADE_REFRESH_TOKEN')
+from configparser import ConfigParser
+from td.client import TDClient
 import tdameritrade as td
 from sqlalchemy import create_engine, desc, MetaData, Table
 
@@ -58,9 +61,21 @@ from sqlalchemy import create_engine, desc, MetaData, Table
 # mini
 from sqlalchemy.orm import mapper
 
-from config import client_id, refresh_token, account_id
+from config.Util import get_project_root
 
-tdclient = td.TDClient(client_id=client_id, refresh_token=refresh_token, account_ids=[account_id])
+config = ConfigParser()
+CONFIG_PATH = os.path.join(get_project_root(), 'config/config.ini')  # requires `import os`
+config.read(CONFIG_PATH)
+
+CLIENT_ID = config.get('main', 'CLIENT_ID')
+REDIRECT_URI = config.get('main', 'REDIRECT_URI')
+CREDENTIALS_PATH = os.path.join(get_project_root(), config.get('main', 'JSON_PATH'))
+ACCOUNT_NUMBER = config.get('main', 'ACCOUNT_NUMBER')
+
+with open(file=CREDENTIALS_PATH, mode='r') as json_file:
+    tockens_file=json.load(json_file)
+
+tdclient = td.TDClient(client_id=CLIENT_ID, refresh_token=tockens_file['refresh_token'], account_ids=[CLIENT_ID])
 # print(tdclient.movers("$SPX.X"))
 # print(tdclient.watchlists())
 

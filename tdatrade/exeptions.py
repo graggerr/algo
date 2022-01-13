@@ -51,3 +51,23 @@ class Forbidden(TDAAPIError):
 
 class NotFound(TDAAPIError):
     pass
+
+
+class GeneralError(TDAAPIError):
+    pass
+
+class NotNulError(TDAAPIError):
+    pass
+
+class TknExpError(TDAAPIError):
+    pass
+
+class ForbidError(TDAAPIError):
+    pass
+class NotFndError(TDAAPIError):
+    pass
+class ExdLmtError(TDAAPIError):
+    pass
+
+class ServerError(TDAAPIError):
+    pass

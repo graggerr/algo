@@ -2,3 +2,5 @@ tdameritrade
 sqlalchemy
 marshmallow
 pyyaml
+td-client
+td-ameritrade-python-api
